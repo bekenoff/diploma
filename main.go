@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -14,6 +15,10 @@ import (
 type Coffee struct {
 	Name string  `json:"name"`
 	Kwt  float64 `json:"kwt"`
+}
+
+type KwtResponse struct {
+	Kwt float64 `json:"kwt"`
 }
 
 func main() {
@@ -54,7 +59,7 @@ func getPlateByModel(w http.ResponseWriter, r *http.Request) {
 
 	// SQL query with WHERE clause using LIKE for partial matching
 	query := `
-        SELECT name, kwt 
+        SELECT kwt 
         FROM Plate
         WHERE name LIKE ?
         ORDER BY CAST(REPLACE(kwt, ' кВт', '') AS UNSIGNED) ASC
@@ -64,42 +69,34 @@ func getPlateByModel(w http.ResponseWriter, r *http.Request) {
 	// Adjusting the search term to include the wildcard character
 	name = name + "%"
 
-	rows, err := db.Query(query, name)
+	row := db.QueryRow(query, name)
+
+	var kwtStr string
+	err = row.Scan(&kwtStr)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err == sql.ErrNoRows {
+			http.Error(w, "No matching records found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
-	defer rows.Close()
 
-	var coffees []Coffee
-	for rows.Next() {
-		var name string
-		var kwtStr string
-		err := rows.Scan(&name, &kwtStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	// Remove ' кВт' from kwtStr
+	kwtStr = strings.TrimSuffix(kwtStr, " кВт")
 
-		kwt, err := parseKwt(kwtStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		coffees = append(coffees, Coffee{Name: name, Kwt: kwt})
-	}
-
-	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	// Convert kwtStr to float64
+	kwt, err := strconv.ParseFloat(kwtStr, 64)
+	if err != nil {
+		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(coffees)
+	json.NewEncoder(w).Encode(KwtResponse{Kwt: kwt})
 }
+
 func getWasherByModel(w http.ResponseWriter, r *http.Request) {
-	// Extracting the name query parameter from the request
 	name := r.URL.Query().Get("name")
 
 	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
@@ -109,54 +106,39 @@ func getWasherByModel(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	// SQL query with WHERE clause using LIKE for partial matching
 	query := `
-        SELECT name, kwt 
-        FROM Washing Machine
+        SELECT kwt 
+        FROM WashingMachine
         WHERE name LIKE ?
         ORDER BY CAST(REPLACE(kwt, ' кВт/ч', '') AS UNSIGNED) ASC
         LIMIT 1
     `
-
-	// Adjusting the search term to include the wildcard character
 	name = name + "%"
+	row := db.QueryRow(query, name)
 
-	rows, err := db.Query(query, name)
+	var kwtStr string
+	err = row.Scan(&kwtStr)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err == sql.ErrNoRows {
+			http.Error(w, "No matching records found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
-	defer rows.Close()
 
-	var coffees []Coffee
-	for rows.Next() {
-		var name string
-		var kwtStr string
-		err := rows.Scan(&name, &kwtStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		kwt, err := parseKwt(kwtStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		coffees = append(coffees, Coffee{Name: name, Kwt: kwt})
-	}
-
-	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	kwtStr = strings.TrimSuffix(kwtStr, " кВт/ч")
+	kwt, err := strconv.ParseFloat(kwtStr, 64)
+	if err != nil {
+		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(coffees)
+	json.NewEncoder(w).Encode(KwtResponse{Kwt: kwt})
 }
+
 func getToasterByModel(w http.ResponseWriter, r *http.Request) {
-	// Extracting the name query parameter from the request
 	name := r.URL.Query().Get("name")
 
 	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
@@ -166,55 +148,39 @@ func getToasterByModel(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	// SQL query with WHERE clause using LIKE for partial matching
 	query := `
-        SELECT name, kwt 
+        SELECT kwt 
         FROM Toaster
         WHERE name LIKE ?
         ORDER BY CAST(REPLACE(kwt, ' кВтч', '') AS UNSIGNED) ASC
         LIMIT 1
     `
-
-	// Adjusting the search term to include the wildcard character
 	name = name + "%"
+	row := db.QueryRow(query, name)
 
-	rows, err := db.Query(query, name)
+	var kwtStr string
+	err = row.Scan(&kwtStr)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err == sql.ErrNoRows {
+			http.Error(w, "No matching records found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
-	defer rows.Close()
 
-	var coffees []Coffee
-	for rows.Next() {
-		var name string
-		var kwtStr string
-		err := rows.Scan(&name, &kwtStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		kwt, err := parseKwt(kwtStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		coffees = append(coffees, Coffee{Name: name, Kwt: kwt})
-	}
-
-	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	kwtStr = strings.TrimSuffix(kwtStr, " кВтч")
+	kwt, err := strconv.ParseFloat(kwtStr, 64)
+	if err != nil {
+		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(coffees)
+	json.NewEncoder(w).Encode(KwtResponse{Kwt: kwt})
 }
 
 func getFreezerByModel(w http.ResponseWriter, r *http.Request) {
-	// Extracting the name query parameter from the request
 	name := r.URL.Query().Get("name")
 
 	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
@@ -224,55 +190,39 @@ func getFreezerByModel(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	// SQL query with WHERE clause using LIKE for partial matching
 	query := `
-        SELECT name, kwt 
+        SELECT kwt 
         FROM Freezer
         WHERE name LIKE ?
         ORDER BY CAST(REPLACE(kwt, ' кВтч', '') AS UNSIGNED) ASC
         LIMIT 1
     `
-
-	// Adjusting the search term to include the wildcard character
 	name = name + "%"
+	row := db.QueryRow(query, name)
 
-	rows, err := db.Query(query, name)
+	var kwtStr string
+	err = row.Scan(&kwtStr)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err == sql.ErrNoRows {
+			http.Error(w, "No matching records found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
-	defer rows.Close()
 
-	var coffees []Coffee
-	for rows.Next() {
-		var name string
-		var kwtStr string
-		err := rows.Scan(&name, &kwtStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		kwt, err := parseKwt(kwtStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		coffees = append(coffees, Coffee{Name: name, Kwt: kwt})
-	}
-
-	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	kwtStr = strings.TrimSuffix(kwtStr, " кВтч")
+	kwt, err := strconv.ParseFloat(kwtStr, 64)
+	if err != nil {
+		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(coffees)
+	json.NewEncoder(w).Encode(KwtResponse{Kwt: kwt})
 }
 
 func getCoffeeByModel(w http.ResponseWriter, r *http.Request) {
-	// Extracting the name query parameter from the request
 	name := r.URL.Query().Get("name")
 
 	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
@@ -282,55 +232,39 @@ func getCoffeeByModel(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	// SQL query with WHERE clause using LIKE for partial matching
 	query := `
-        SELECT name, kwt 
+        SELECT kwt 
         FROM Coffee
         WHERE name LIKE ?
         ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC
         LIMIT 1
     `
-
-	// Adjusting the search term to include the wildcard character
 	name = name + "%"
+	row := db.QueryRow(query, name)
 
-	rows, err := db.Query(query, name)
+	var kwtStr string
+	err = row.Scan(&kwtStr)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err == sql.ErrNoRows {
+			http.Error(w, "No matching records found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
-	defer rows.Close()
 
-	var coffees []Coffee
-	for rows.Next() {
-		var name string
-		var kwtStr string
-		err := rows.Scan(&name, &kwtStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		kwt, err := parseKwt(kwtStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		coffees = append(coffees, Coffee{Name: name, Kwt: kwt})
-	}
-
-	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	kwtStr = strings.TrimSuffix(kwtStr, " Вт")
+	kwt, err := strconv.ParseFloat(kwtStr, 64)
+	if err != nil {
+		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(coffees)
+	json.NewEncoder(w).Encode(KwtResponse{Kwt: kwt})
 }
 
 func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
-	// Extracting the name query parameter from the request
 	name := r.URL.Query().Get("name")
 
 	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
@@ -340,51 +274,36 @@ func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	// SQL query with WHERE clause using LIKE for partial matching
 	query := `
-        SELECT name, kwt 
-        FROM Freezer
+        SELECT kwt 
+        FROM Fridge
         WHERE name LIKE ?
         ORDER BY CAST(REPLACE(kwt, ' кВтч', '') AS UNSIGNED) ASC
         LIMIT 1
     `
-
-	// Adjusting the search term to include the wildcard character
 	name = name + "%"
+	row := db.QueryRow(query, name)
 
-	rows, err := db.Query(query, name)
+	var kwtStr string
+	err = row.Scan(&kwtStr)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err == sql.ErrNoRows {
+			http.Error(w, "No matching records found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
-	defer rows.Close()
 
-	var coffees []Coffee
-	for rows.Next() {
-		var name string
-		var kwtStr string
-		err := rows.Scan(&name, &kwtStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		kwt, err := parseKwt(kwtStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		coffees = append(coffees, Coffee{Name: name, Kwt: kwt})
-	}
-
-	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	kwtStr = strings.TrimSuffix(kwtStr, " кВтч")
+	kwt, err := strconv.ParseFloat(kwtStr, 64)
+	if err != nil {
+		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(coffees)
+	json.NewEncoder(w).Encode(KwtResponse{Kwt: kwt})
 }
 
 // ALL
