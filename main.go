@@ -8,7 +8,10 @@ import (
 	"regexp"
 	"strconv"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/gin-gonic/gin"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Coffee struct {
@@ -17,6 +20,7 @@ type Coffee struct {
 }
 
 func main() {
+	router := gin.Default()
 	http.HandleFunc("/get-coffee-machine", getCoffee)
 	http.HandleFunc("/get-fridge", getFridge)
 	http.HandleFunc("/get-freezer", getFreezer)
@@ -25,6 +29,7 @@ func main() {
 	http.HandleFunc("/get-toaster", getToaster)
 
 	// BY MODEL
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	http.HandleFunc("/get-coffee-machine-by-model", getCoffeeByModel)
 	http.HandleFunc("/get-fridge-by-model", getFridgeByModel)
@@ -100,7 +105,7 @@ func getWasherByModel(w http.ResponseWriter, r *http.Request) {
 	// Extracting the name query parameter from the request
 	name := r.URL.Query().Get("name")
 
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/diploma")
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -157,7 +162,7 @@ func getToasterByModel(w http.ResponseWriter, r *http.Request) {
 	// Extracting the name query parameter from the request
 	name := r.URL.Query().Get("name")
 
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/diploma")
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -215,7 +220,7 @@ func getFreezerByModel(w http.ResponseWriter, r *http.Request) {
 	// Extracting the name query parameter from the request
 	name := r.URL.Query().Get("name")
 
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/diploma")
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -273,7 +278,7 @@ func getCoffeeByModel(w http.ResponseWriter, r *http.Request) {
 	// Extracting the name query parameter from the request
 	name := r.URL.Query().Get("name")
 
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/diploma")
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -331,7 +336,7 @@ func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
 	// Extracting the name query parameter from the request
 	name := r.URL.Query().Get("name")
 
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/diploma")
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -396,7 +401,7 @@ func parseKwt(kwtStr string) (float64, error) {
 	return strconv.ParseFloat(cleanedStr, 64)
 }
 func getCoffee(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/diploma")
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -439,7 +444,7 @@ func getCoffee(w http.ResponseWriter, r *http.Request) {
 }
 
 func getFridge(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/diploma")
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -482,7 +487,7 @@ func getFridge(w http.ResponseWriter, r *http.Request) {
 }
 
 func getFreezer(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/diploma")
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -525,7 +530,7 @@ func getFreezer(w http.ResponseWriter, r *http.Request) {
 }
 
 func getPlate(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/diploma")
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -568,7 +573,7 @@ func getPlate(w http.ResponseWriter, r *http.Request) {
 }
 
 func getWasher(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/diploma")
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -616,7 +621,7 @@ func getWasher(w http.ResponseWriter, r *http.Request) {
 }
 
 func getToaster(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/diploma")
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
