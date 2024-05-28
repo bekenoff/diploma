@@ -43,7 +43,7 @@ func getPlateByModel(w http.ResponseWriter, r *http.Request) {
 	// Extracting the name query parameter from the request
 	name := r.URL.Query().Get("name")
 
-	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/diploma")
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
