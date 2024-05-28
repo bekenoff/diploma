@@ -8,10 +8,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type Coffee struct {
@@ -20,7 +17,7 @@ type Coffee struct {
 }
 
 func main() {
-	router := gin.Default()
+
 	http.HandleFunc("/get-coffee-machine", getCoffee)
 	http.HandleFunc("/get-fridge", getFridge)
 	http.HandleFunc("/get-freezer", getFreezer)
@@ -29,7 +26,6 @@ func main() {
 	http.HandleFunc("/get-toaster", getToaster)
 
 	// BY MODEL
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	http.HandleFunc("/get-coffee-machine-by-model", getCoffeeByModel)
 	http.HandleFunc("/get-fridge-by-model", getFridgeByModel)
