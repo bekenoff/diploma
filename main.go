@@ -18,21 +18,22 @@ type Coffee struct {
 
 func main() {
 
-	http.HandleFunc("/get-coffee-machine", getCoffee)
-	http.HandleFunc("/get-fridge", getFridge)
-	http.HandleFunc("/get-freezer", getFreezer)
-	http.HandleFunc("/get-plate", getPlate)
-	http.HandleFunc("/get-washer", getWasher)
-	http.HandleFunc("/get-toaster", getToaster)
+	http.HandleFunc("/Coffee-machine", getCoffee)
+	http.HandleFunc("/Fridge", getFridge)
+	http.HandleFunc("/Freezer", getFreezer)
+	http.HandleFunc("/Plate", getPlate)
+	http.HandleFunc("/Washing", getWasher)
+	http.HandleFunc("/Toaster", getToaster)
+	http.HandleFunc("/Tech", getTechnic)
 
 	// BY MODEL
 
-	http.HandleFunc("/get-coffee-machine-by-model", getCoffeeByModel)
-	http.HandleFunc("/get-fridge-by-model", getFridgeByModel)
-	http.HandleFunc("/get-freezer-by-model", getFreezerByModel)
-	http.HandleFunc("/get-plate-by-model", getPlateByModel)
-	http.HandleFunc("/get-washer-by-model", getWasherByModel)
-	http.HandleFunc("/get-toaster-by-model", getToasterByModel)
+	http.HandleFunc("/Coffee-machine-by-model", getCoffeeByModel)
+	http.HandleFunc("/Fridge-by-model", getFridgeByModel)
+	http.HandleFunc("/Freezer-by-model", getFreezerByModel)
+	http.HandleFunc("/Plate-by-model", getPlateByModel)
+	http.HandleFunc("/Washer-by-model", getWasherByModel)
+	http.HandleFunc("/Toaster-by-model", getToasterByModel)
 
 	log.Println("Server is running on http://localhost:8000")
 	log.Fatal(http.ListenAndServe(":8000", nil))
@@ -54,7 +55,7 @@ func getPlateByModel(w http.ResponseWriter, r *http.Request) {
 	// SQL query with WHERE clause using LIKE for partial matching
 	query := `
         SELECT name, kwt 
-        FROM plita
+        FROM Plate
         WHERE name LIKE ?
         ORDER BY CAST(REPLACE(kwt, ' кВт', '') AS UNSIGNED) ASC
         LIMIT 1
@@ -111,7 +112,7 @@ func getWasherByModel(w http.ResponseWriter, r *http.Request) {
 	// SQL query with WHERE clause using LIKE for partial matching
 	query := `
         SELECT name, kwt 
-        FROM stiralka
+        FROM Washing Machine
         WHERE name LIKE ?
         ORDER BY CAST(REPLACE(kwt, ' кВт/ч', '') AS UNSIGNED) ASC
         LIMIT 1
@@ -168,7 +169,7 @@ func getToasterByModel(w http.ResponseWriter, r *http.Request) {
 	// SQL query with WHERE clause using LIKE for partial matching
 	query := `
         SELECT name, kwt 
-        FROM toster
+        FROM Toaster
         WHERE name LIKE ?
         ORDER BY CAST(REPLACE(kwt, ' кВтч', '') AS UNSIGNED) ASC
         LIMIT 1
@@ -226,7 +227,7 @@ func getFreezerByModel(w http.ResponseWriter, r *http.Request) {
 	// SQL query with WHERE clause using LIKE for partial matching
 	query := `
         SELECT name, kwt 
-        FROM moroz
+        FROM Freezer
         WHERE name LIKE ?
         ORDER BY CAST(REPLACE(kwt, ' кВтч', '') AS UNSIGNED) ASC
         LIMIT 1
@@ -284,7 +285,7 @@ func getCoffeeByModel(w http.ResponseWriter, r *http.Request) {
 	// SQL query with WHERE clause using LIKE for partial matching
 	query := `
         SELECT name, kwt 
-        FROM coffee
+        FROM Coffee
         WHERE name LIKE ?
         ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC
         LIMIT 1
@@ -342,7 +343,7 @@ func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
 	// SQL query with WHERE clause using LIKE for partial matching
 	query := `
         SELECT name, kwt 
-        FROM holod
+        FROM Freezer
         WHERE name LIKE ?
         ORDER BY CAST(REPLACE(kwt, ' кВтч', '') AS UNSIGNED) ASC
         LIMIT 1
@@ -404,7 +405,7 @@ func getCoffee(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT name, kwt FROM coffee ORDER BY kwt ASC")
+	rows, err := db.Query("SELECT name, kwt FROM Coffee ORDER BY kwt ASC")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -447,7 +448,7 @@ func getFridge(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT name, kwt FROM holod ORDER BY kwt ASC")
+	rows, err := db.Query("SELECT name, kwt FROM Freezer ORDER BY kwt ASC")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -490,7 +491,7 @@ func getFreezer(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT name, kwt FROM holod ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC")
+	rows, err := db.Query("SELECT name, kwt FROM Freezer ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -533,7 +534,7 @@ func getPlate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT name, kwt FROM plita ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC")
+	rows, err := db.Query("SELECT name, kwt FROM Plate ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -579,7 +580,7 @@ func getWasher(w http.ResponseWriter, r *http.Request) {
 	// Query to select name and kwt, and order by numeric value of kwt
 	rows, err := db.Query(`
 		SELECT name, kwt 
-		FROM stiralka 
+		FROM Washing Machine 
 		ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC
 	`)
 	if err != nil {
@@ -624,7 +625,7 @@ func getToaster(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT name, kwt FROM toster ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC")
+	rows, err := db.Query("SELECT name, kwt FROM Toaster ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -657,4 +658,68 @@ func getToaster(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(toasters)
+}
+
+func getTechnic(w http.ResponseWriter, r *http.Request) {
+	// Парсинг параметров запроса
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Получение имени таблицы и модели техники из параметров запроса
+	tableName := r.Form.Get("table")
+	name := r.Form.Get("name")
+
+	// Проверка наличия обязательных параметров
+	if tableName == "" || name == "" {
+		http.Error(w, "Необходимо указать название таблицы и неполное название модели техники", http.StatusBadRequest)
+		return
+	}
+
+	// Открытие соединения с базой данных
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	// Подготовка SQL запроса с плейсхолдером и оператором LIKE
+	query := "SELECT name, kwt FROM " + tableName + " WHERE name LIKE ? ORDER BY kwt ASC"
+	rows, err := db.Query(query, "%"+name+"%")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var fridges []Coffee
+	for rows.Next() {
+		var name string
+		var kwtStr string
+		err := rows.Scan(&name, &kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		kwt, err := parseKwt(kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fridges = append(fridges, Coffee{Name: name, Kwt: kwt})
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Установка заголовка Content-Type и кодирование данных в JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(fridges)
 }
