@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -295,8 +296,7 @@ func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kwtStr = strings.TrimSuffix(kwtStr, " кВтч")
-	kwt, err := strconv.ParseFloat(kwtStr, 64)
+	kwt, err := parseKwt(kwtStr)
 	if err != nil {
 		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
@@ -309,9 +309,13 @@ func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
 // ALL
 
 func parseKwt(kwtStr string) (float64, error) {
-	re := regexp.MustCompile(`[^\d,]`)
+	re := regexp.MustCompile(`[^\d,]`) // Оставляем только цифры и запятую
 	cleanedStr := re.ReplaceAllString(kwtStr, "")
-	cleanedStr = strings.Replace(cleanedStr, ",", ".", 1)
+	cleanedStr = strings.Replace(cleanedStr, ",", ".", 1) // Заменяем первую запятую на точку
+
+	// Отладочный вывод
+	fmt.Printf("Original kwtStr: %s, Cleaned kwtStr: %s\n", kwtStr, cleanedStr)
+
 	if cleanedStr == "" {
 		return 0, nil
 	}
