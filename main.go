@@ -278,7 +278,7 @@ func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
         SELECT kwt 
         FROM Fridge
         WHERE name LIKE ?
-        ORDER BY CAST(REPLACE(kwt, ' кВтч', '') AS UNSIGNED) ASC
+        ORDER BY CAST(REPLACE(REPLACE(kwt, ' кВтч', ''), ',', '.') AS DECIMAL(10,2)) ASC
         LIMIT 1
     `
 	name = name + "%"
@@ -295,8 +295,7 @@ func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kwtStr = strings.TrimSuffix(kwtStr, " кВтч")
-	kwt, err := strconv.ParseFloat(kwtStr, 64)
+	kwt, err := parseKwt(kwtStr)
 	if err != nil {
 		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
@@ -308,14 +307,6 @@ func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
 
 // ALL
 
-func parseKwt(kwtStr string) (float64, error) {
-	re := regexp.MustCompile(`[^\d.]`)
-	cleanedStr := re.ReplaceAllString(kwtStr, "")
-	if cleanedStr == "" {
-		return 0, nil
-	}
-	return strconv.ParseFloat(cleanedStr, 64)
-}
 func getCoffee(w http.ResponseWriter, r *http.Request) {
 	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
@@ -641,4 +632,16 @@ func getTechnic(w http.ResponseWriter, r *http.Request) {
 	// Установка заголовка Content-Type и кодирование данных в JSON
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(fridges)
+}
+
+func parseKwt(kwtStr string) (float64, error) {
+	// Remove the non-numeric characters except for the decimal comma
+	re := regexp.MustCompile(`[^\d,]`)
+	cleanedStr := re.ReplaceAllString(kwtStr, "")
+	// Replace the comma with a dot for correct float parsing
+	cleanedStr = strings.Replace(cleanedStr, ",", ".", 1)
+	if cleanedStr == "" {
+		return 0, nil
+	}
+	return strconv.ParseFloat(cleanedStr, 64)
 }
