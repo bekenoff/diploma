@@ -3,11 +3,11 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -82,7 +82,11 @@ func getPlateByModel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kwt, err := parseKwt(kwtStr)
+	// Remove ' кВт' from kwtStr
+	kwtStr = strings.TrimSuffix(kwtStr, " кВт")
+
+	// Convert kwtStr to float64
+	kwt, err := strconv.ParseFloat(kwtStr, 64)
 	if err != nil {
 		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
@@ -123,7 +127,8 @@ func getWasherByModel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kwt, err := parseKwt(kwtStr)
+	kwtStr = strings.TrimSuffix(kwtStr, " кВт/ч")
+	kwt, err := strconv.ParseFloat(kwtStr, 64)
 	if err != nil {
 		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
@@ -164,7 +169,8 @@ func getToasterByModel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kwt, err := parseKwt(kwtStr)
+	kwtStr = strings.TrimSuffix(kwtStr, " кВтч")
+	kwt, err := strconv.ParseFloat(kwtStr, 64)
 	if err != nil {
 		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
@@ -205,7 +211,8 @@ func getFreezerByModel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kwt, err := parseKwt(kwtStr)
+	kwtStr = strings.TrimSuffix(kwtStr, " кВтч")
+	kwt, err := strconv.ParseFloat(kwtStr, 64)
 	if err != nil {
 		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
@@ -246,7 +253,8 @@ func getCoffeeByModel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kwt, err := parseKwt(kwtStr)
+	kwtStr = strings.TrimSuffix(kwtStr, " Вт")
+	kwt, err := strconv.ParseFloat(kwtStr, 64)
 	if err != nil {
 		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
@@ -287,7 +295,8 @@ func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kwt, err := parseKwt(kwtStr)
+	kwtStr = strings.TrimSuffix(kwtStr, " кВтч")
+	kwt, err := strconv.ParseFloat(kwtStr, 64)
 	if err != nil {
 		http.Error(w, "Error converting kwt to float64", http.StatusInternalServerError)
 		return
@@ -297,112 +306,339 @@ func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(KwtResponse{Kwt: kwt})
 }
 
-// Helper function to parse kwt string to float64
+// ALL
+
 func parseKwt(kwtStr string) (float64, error) {
-	// Using regular expression to extract float value from string
-	re := regexp.MustCompile(`[0-9]+\.?[0-9]*`)
-	kwtMatches := re.FindStringSubmatch(kwtStr)
-
-	if len(kwtMatches) < 1 {
-		return 0, fmt.Errorf("Failed to parse kwt value")
+	re := regexp.MustCompile(`[^\d.]`)
+	cleanedStr := re.ReplaceAllString(kwtStr, "")
+	if cleanedStr == "" {
+		return 0, nil
 	}
-
-	// Converting extracted string to float64
-	kwt, err := strconv.ParseFloat(kwtMatches[0], 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return kwt, nil
+	return strconv.ParseFloat(cleanedStr, 64)
 }
-
 func getCoffee(w http.ResponseWriter, r *http.Request) {
-	// Sample Coffee data
-	coffee := Coffee{Name: "Espresso Machine", Kwt: 1200}
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
 
-	// Setting response headers
+	rows, err := db.Query("SELECT name, kwt FROM Coffee ORDER BY kwt ASC")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var coffees []Coffee
+	for rows.Next() {
+		var name string
+		var kwtStr string
+		err := rows.Scan(&name, &kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		kwt, err := parseKwt(kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		coffees = append(coffees, Coffee{Name: name, Kwt: kwt})
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	// Encoding data to JSON and writing it to response
-	json.NewEncoder(w).Encode(coffee)
+	json.NewEncoder(w).Encode(coffees)
 }
 
 func getFridge(w http.ResponseWriter, r *http.Request) {
-	// Sample Fridge data
-	fridge := Coffee{Name: "Smart Fridge", Kwt: 250}
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
 
-	// Setting response headers
+	rows, err := db.Query("SELECT name, kwt FROM Freezer ORDER BY kwt ASC")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var fridges []Coffee
+	for rows.Next() {
+		var name string
+		var kwtStr string
+		err := rows.Scan(&name, &kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		kwt, err := parseKwt(kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fridges = append(fridges, Coffee{Name: name, Kwt: kwt})
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	// Encoding data to JSON and writing it to response
-	json.NewEncoder(w).Encode(fridge)
+	json.NewEncoder(w).Encode(fridges)
 }
 
 func getFreezer(w http.ResponseWriter, r *http.Request) {
-	// Sample Freezer data
-	freezer := Coffee{Name: "Deep Freezer", Kwt: 500}
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
 
-	// Setting response headers
+	rows, err := db.Query("SELECT name, kwt FROM Freezer ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var freezers []Coffee
+	for rows.Next() {
+		var name string
+		var kwtStr string
+		err := rows.Scan(&name, &kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		kwt, err := parseKwt(kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		freezers = append(freezers, Coffee{Name: name, Kwt: kwt})
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	// Encoding data to JSON and writing it to response
-	json.NewEncoder(w).Encode(freezer)
+	json.NewEncoder(w).Encode(freezers)
 }
 
 func getPlate(w http.ResponseWriter, r *http.Request) {
-	// Sample Plate data
-	plate := Coffee{Name: "Induction Cooktop", Kwt: 1500}
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
 
-	// Setting response headers
+	rows, err := db.Query("SELECT name, kwt FROM Plate ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var plates []Coffee
+	for rows.Next() {
+		var name string
+		var kwtStr string
+		err := rows.Scan(&name, &kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		kwt, err := parseKwt(kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		plates = append(plates, Coffee{Name: name, Kwt: kwt})
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	// Encoding data to JSON and writing it to response
-	json.NewEncoder(w).Encode(plate)
+	json.NewEncoder(w).Encode(plates)
 }
 
 func getWasher(w http.ResponseWriter, r *http.Request) {
-	// Sample Washing Machine data
-	washer := Coffee{Name: "Front Load Washer", Kwt: 800}
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
 
-	// Setting response headers
+	// Query to select name and kwt, and order by numeric value of kwt
+	rows, err := db.Query(`
+		SELECT name, kwt 
+		FROM Washing Machine 
+		ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC
+	`)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var washers []Coffee
+	for rows.Next() {
+		var name string
+		var kwtStr string
+		err := rows.Scan(&name, &kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		kwt, err := parseKwt(kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		washers = append(washers, Coffee{Name: name, Kwt: kwt})
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	// Encoding data to JSON and writing it to response
-	json.NewEncoder(w).Encode(washer)
+	json.NewEncoder(w).Encode(washers)
 }
 
 func getToaster(w http.ResponseWriter, r *http.Request) {
-	// Sample Toaster data
-	toaster := Coffee{Name: "Pop-up Toaster", Kwt: 900}
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
 
-	// Setting response headers
+	rows, err := db.Query("SELECT name, kwt FROM Toaster ORDER BY CAST(REPLACE(kwt, ' Вт', '') AS UNSIGNED) ASC")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var toasters []Coffee
+	for rows.Next() {
+		var name string
+		var kwtStr string
+		err := rows.Scan(&name, &kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		kwt, err := parseKwt(kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		toasters = append(toasters, Coffee{Name: name, Kwt: kwt})
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	// Encoding data to JSON and writing
-	json.NewEncoder(w).Encode(toaster)
+	json.NewEncoder(w).Encode(toasters)
 }
 
 func getTechnic(w http.ResponseWriter, r *http.Request) {
-	// Sample Technic data
-	technic := []Coffee{
-		{Name: "Espresso Machine", Kwt: 1200},
-		{Name: "Smart Fridge", Kwt: 250},
-		{Name: "Deep Freezer", Kwt: 500},
-		{Name: "Induction Cooktop", Kwt: 1500},
-		{Name: "Front Load Washer", Kwt: 800},
-		{Name: "Pop-up Toaster", Kwt: 900},
+	// Парсинг параметров запроса
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	// Setting response headers
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	// Получение имени таблицы и модели техники из параметров запроса
+	tableName := r.Form.Get("table")
+	name := r.Form.Get("name")
 
-	// Encoding data to JSON and writing it to response
-	json.NewEncoder(w).Encode(technic)
+	// Проверка наличия обязательных параметров
+	if tableName == "" || name == "" {
+		http.Error(w, "Необходимо указать название таблицы и неполное название модели техники", http.StatusBadRequest)
+		return
+	}
+
+	// Открытие соединения с базой данных
+	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	// Подготовка SQL запроса с плейсхолдером и оператором LIKE
+	query := "SELECT name, kwt FROM " + tableName + " WHERE name LIKE ? ORDER BY kwt ASC"
+	rows, err := db.Query(query, "%"+name+"%")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var fridges []Coffee
+	for rows.Next() {
+		var name string
+		var kwtStr string
+		err := rows.Scan(&name, &kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		kwt, err := parseKwt(kwtStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fridges = append(fridges, Coffee{Name: name, Kwt: kwt})
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Установка заголовка Content-Type и кодирование данных в JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(fridges)
 }
