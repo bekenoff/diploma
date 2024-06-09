@@ -309,17 +309,23 @@ func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
 // ALL
 
 func parseKwt(kwtStr string) (float64, error) {
-	re := regexp.MustCompile(`[^\d,]`) // Оставляем только цифры и запятую
-	cleanedStr := re.ReplaceAllString(kwtStr, "")
-	cleanedStr = strings.Replace(cleanedStr, ",", ".", 1) // Заменяем первую запятую на точку
-
-	// Отладочный вывод
-	fmt.Printf("Original kwtStr: %s, Cleaned kwtStr: %s\n", kwtStr, cleanedStr)
-
-	if cleanedStr == "" {
-		return 0, nil
+	// Первым делом попробуем найти числовую часть в строке
+	re := regexp.MustCompile(`[\d.,]+`) // Находим все числа, включая десятичные разделители
+	match := re.FindString(kwtStr)
+	if match == "" {
+		return 0, fmt.Errorf("No numeric value found in '%s'", kwtStr)
 	}
-	return strconv.ParseFloat(cleanedStr, 64)
+
+	// Заменяем запятые на точки для корректного преобразования в тип float64
+	match = strings.Replace(match, ",", ".", -1)
+
+	// Пробуем преобразовать строку в тип float64
+	kwt, err := strconv.ParseFloat(match, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return kwt, nil
 }
 
 func getCoffee(w http.ResponseWriter, r *http.Request) {
