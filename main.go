@@ -309,13 +309,15 @@ func getFridgeByModel(w http.ResponseWriter, r *http.Request) {
 // ALL
 
 func parseKwt(kwtStr string) (float64, error) {
-	re := regexp.MustCompile(`[^\d.]`)
+	re := regexp.MustCompile(`[^\d,]`)
 	cleanedStr := re.ReplaceAllString(kwtStr, "")
+	cleanedStr = strings.Replace(cleanedStr, ",", ".", 1)
 	if cleanedStr == "" {
 		return 0, nil
 	}
 	return strconv.ParseFloat(cleanedStr, 64)
 }
+
 func getCoffee(w http.ResponseWriter, r *http.Request) {
 	db, err := sql.Open("mysql", "root:zikRerSPppEEPJZUeawwtpMpyCmpOmtK@tcp(monorail.proxy.rlwy.net:22986)/railway")
 	if err != nil {
